@@ -20,8 +20,8 @@ const char map[] =
   "#      #       #"
   "################";
 
-float rx, ry, dx, dy, Dh, Dv, D, cosB, sinB, alfa = 45, alfaRad, gammaRad, betaRad, d, x = 1, y = 1, stepX, stepY, step = 0.1;
-int h, stolb, stolbTexture, wTexture, hTexture;
+float rx, ry, dx, dy, Dh, Dv, D, cosB, sinB, alfa = 45, alfaRad, gammaRad, betaRad, d, x = 1, y = 1, stepX, stepY, step = 0.1, stolbTexture;
+int h, stolb, wTexture, hTexture;
 
 void get_wall(float &rx, float &ry, float dx, float dy){
 	do {
@@ -32,12 +32,12 @@ void get_wall(float &rx, float &ry, float dx, float dy){
 
 Texture::Texture(int width, int height) :
 		Window(width, height),
-		fov(60), d0(width/(2*tan(fov/2 * 3.14 / 180))),	map_img(width*height/4), rectangle_map(), w_rectagle_map((width/6)/MAP_W), h_rectagle_map((height/6)/MAP_H), countStolbInRectangle(width / MAP_W){
+		fov(60), d0(width/(2*tan(fov/2 * 3.14 / 180))), map_img(width*height/4), rectangle_map(), w_rectagle_map((width/6)/MAP_W), h_rectagle_map((height/6)/MAP_H), countStolbInRectangle(width / MAP_W){
 	//текстура
 	wall = std::shared_ptr<SDL_Texture>(
-		IMG_LoadTexture(_renderer.get(), "wall.jpg"), SDL_DestroyTexture);
-	if (wall == nullptr)
-		throw std::runtime_error(
+			IMG_LoadTexture(_renderer.get(), "wall.jpg"), SDL_DestroyTexture);
+		if (wall == nullptr)
+			throw std::runtime_error(
 			std::string("Ќе удалось загрузить текстуру: ")
 					+ std::string(SDL_GetError()));
 	SDL_QueryTexture(wall.get(), nullptr, nullptr, &wTexture, &hTexture);
@@ -47,6 +47,7 @@ void Texture::render() {
 	SDL_SetRenderDrawColor(_renderer.get(), 63, 155, 11, 255);
 	SDL_RenderClear(_renderer.get());
 	SDL_SetRenderDrawBlendMode(_renderer.get(), SDL_BLENDMODE_BLEND);
+
 
 	rectangle_map.w = width();
 	rectangle_map.h = height()/2;
@@ -60,6 +61,7 @@ void Texture::render() {
 		gammaRad = atan2(stolb-width()/2, d0);
 		alfaRad = alfa * 3.14 / 180;
 		betaRad = gammaRad + alfaRad;
+
 		cosB = cos(betaRad);
 		sinB = sin(betaRad);
 
@@ -83,6 +85,8 @@ void Texture::render() {
 			Dv = hypot (rx-x, ry-y);
 		}
 
+		stolbTexture = modf(ry,nullptr);
+
 		if (sinB > eps){
 			dy = 1;
 			ry = floor(y) + eps;
@@ -105,11 +109,14 @@ void Texture::render() {
 		D = std::min(Dh, Dv);
 		d = d0/cos(gammaRad);
 		h = d/D;
-	    stolbTexture = stolb % countStolbInRectangle;
 
-		imgPartRect.x = stolbTexture * (wTexture / countStolbInRectangle);
+		if (D == Dh){
+			stolbTexture = modf(rx,nullptr);
+		}
+
+		imgPartRect.x = stolbTexture * wTexture;
 		imgPartRect.y = 0;
-		imgPartRect.w = 2;
+		imgPartRect.w = 1;
 		imgPartRect.h = hTexture;
 
 		SDL_Rect wall_rect{stolb, height()/2 - h/2, 1, h};
